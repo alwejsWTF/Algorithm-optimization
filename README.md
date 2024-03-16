@@ -1,1 +1,2 @@
 # TechnikiInteligentnejAnalizyDanych
+(っ °Д °;)っ
