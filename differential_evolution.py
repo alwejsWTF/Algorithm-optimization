@@ -1,64 +1,62 @@
 import numpy as np
 
+class DifferentialEvolution:
+    def __init__(self, objective_function, bounds, population_size=50, F=0.5, CR=0.9, max_generations=1000, verbose=True):
+        self.objective_function = objective_function
+        self.bounds = np.asarray(bounds)
+        self.population_size = population_size
+        self.F = F  # Differential weight
+        self.CR = CR  # Crossover probability
+        self.max_generations = max_generations
+        self.verbose = verbose
+        self.dimension = self.bounds.shape[1]  # Number of dimensions
+        self.population = np.random.uniform(low=self.bounds[0], high=self.bounds[1],
+                                           size=(self.population_size, self.dimension))
+        self.fitness = np.asarray([self.objective_function(ind) for ind in self.population])
+        self.best_idx = np.argmin(self.fitness)
+        self.best_solution = self.population[self.best_idx]
+        self.best_fitness = self.fitness[self.best_idx]
 
-# Objective function example
-def fobj(x):
-    return np.sum(x**2)
+    def mutate(self, target_idx):
+        idxs = [idx for idx in range(self.population_size) if idx != target_idx]
+        r1, r2, r3, r4 = self.population[np.random.choice(idxs, 4, replace=False)]
+        mutant_vector = self.population[target_idx] + self.F * (r1 - r2) + self.F * (r3 - r4)
+        return mutant_vector
 
+    def recombine(self, target_vector, mutant_vector):
+        crossover_points = np.random.rand(self.dimension) < self.CR
+        trial_vector = np.where(crossover_points, mutant_vector, target_vector)
+        return trial_vector
 
-# Mutation function for DE/current/2/bin
-def mutation(population, target_idx, F):
-    pop_size = population.shape[0]
-    idxs = [idx for idx in range(pop_size) if idx != target_idx]
-    r1, r2, r3, r4 = population[np.random.choice(idxs, 4, replace=False)]
-    mutant = population[target_idx] + F * (r1 - r2) + F * (r3 - r4)
-    return mutant
+    def select(self, target_idx, trial_vector):
+        trial_fitness = self.objective_function(trial_vector)
+        if trial_fitness < self.fitness[target_idx]:
+            self.population[target_idx] = trial_vector
+            self.fitness[target_idx] = trial_fitness
+            if trial_fitness < self.best_fitness:
+                self.best_fitness = trial_fitness
+                self.best_solution = trial_vector
 
+    def optimize(self):
+        for generation in range(self.max_generations):
+            for i in range(self.population_size):
+                mutant_vector = self.mutate(i)
+                trial_vector = self.recombine(self.population[i], mutant_vector)
+                trial_vector = np.clip(trial_vector, self.bounds[0], self.bounds[1])
+                self.select(i, trial_vector)
 
-# Crossover function for DE/current/2/bin
-def crossover(target, mutant, crossp):
-    cross_points = np.random.rand(target.size) < crossp
-    trial = np.where(cross_points, mutant, target)
-    return trial
+            if self.verbose and generation % 100 == 0:
+                print(f"Generation {generation}: Best Fitness = {self.best_fitness}")
 
+        return self.best_solution, self.best_fitness
 
-# Ensure the trial vector is within bounds
-def ensure_bounds(vec, bounds):
-    vec_new = np.clip(vec, bounds[:, 0], bounds[:, 1])
-    return vec_new
+# Example usage:
+def trid_function(x):
+    sum_squares = np.sum((x - 1)**2)
+    sum_product = np.sum(x[:-1] * x[1:])
+    return sum_squares - sum_product
 
-
-# Define the Differential Evolution function with DE/current/2/bin strategy
-def differential_evolution(fun, bounds, mutation_probability=0.8,
-                           crossover_probability=0.7, population_size=20,
-                           iterations=1000):
-    dimensions = len(bounds)
-    pop = np.random.rand(population_size, dimensions)
-    min_b, max_b = np.asarray(bounds).T
-    diff = np.fabs(min_b - max_b)
-    pop_denorm = min_b + pop * diff
-    fitness = np.asarray([fun(ind) for ind in pop_denorm])
-    best_idx = np.argmin(fitness)
-    best = pop_denorm[best_idx]
-    for i in range(iterations):
-        for j in range(population_size):
-            mutant = mutation(pop, j, mutation_probability)
-            trial = crossover(pop[j], mutant, crossover_probability)
-            trial_denorm = ensure_bounds(trial, np.asarray(bounds))
-            f = fobj(trial_denorm)
-            if f < fitness[j]:
-                fitness[j] = f
-                pop[j] = (trial_denorm - min_b) / diff
-                if f < fitness[best_idx]:
-                    best_idx = j
-                    best = trial_denorm
-        yield best, fitness[best_idx]
-
-
-# Example usage
-bounds = [(-5, 5)] * 2 # Define bounds for a 2-D problem
-
-# Run DE
-result = next(differential_evolution(fobj, bounds))
-print("Best solution:", result[0])
-print("Fitness:", result[1])
+bounds = (np.array([-5, -5]), np.array([5, 5]))
+de_optimizer = DifferentialEvolution(objective_function=trid_function, bounds=bounds)
+best_solution, best_fitness = de_optimizer.optimize()
+print(f"Best solution found: {best_solution}, Best fitness: {best_fitness}")
