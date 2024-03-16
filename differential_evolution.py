@@ -20,7 +20,7 @@ class DifferentialEvolution:
     def mutate(self, target_idx):
         idxs = [idx for idx in range(self.population_size) if idx != target_idx]
         r1, r2, r3, r4 = self.population[np.random.choice(idxs, 4, replace=False)]
-        mutant_vector = self.population[target_idx] + self.F * (r1 - r2) + self.F * (r3 - r4)
+        mutant_vector = r1 + self.F * (r1 - r2) + self.F * (r3 - r4) #self.population[target_idx]
         return mutant_vector
 
     def recombine(self, target_vector, mutant_vector):
@@ -56,7 +56,7 @@ def trid_function(x):
     sum_product = np.sum(x[:-1] * x[1:])
     return sum_squares - sum_product
 
-bounds = (np.array([-5, -5]), np.array([5, 5]))
+bounds = (np.array([-10] * 30), np.array([10] * 30))
 de_optimizer = DifferentialEvolution(objective_function=trid_function, bounds=bounds)
 best_solution, best_fitness = de_optimizer.optimize()
 print(f"Best solution found: {best_solution}, Best fitness: {best_fitness}")
