@@ -1,8 +1,10 @@
 import numpy as np
+import functions as fun
+
 
 class DifferentialEvolution:
-    def __init__(self, objective_function, bounds, population_size=50, F=0.5, CR=0.9, max_generations=1000, verbose=True):
-        self.objective_function = objective_function
+    def __init__(self, function, bounds, population_size=50, F=0.5, CR=0.9, max_generations=1000, verbose=True):
+        self.function = function
         self.bounds = np.asarray(bounds)
         self.population_size = population_size
         self.F = F  # Differential weight
@@ -12,7 +14,7 @@ class DifferentialEvolution:
         self.dimension = self.bounds.shape[1]  # Number of dimensions
         self.population = np.random.uniform(low=self.bounds[0], high=self.bounds[1],
                                            size=(self.population_size, self.dimension))
-        self.fitness = np.asarray([self.objective_function(ind) for ind in self.population])
+        self.fitness = np.asarray([self.function(ind) for ind in self.population])
         self.best_idx = np.argmin(self.fitness)
         self.best_solution = self.population[self.best_idx]
         self.best_fitness = self.fitness[self.best_idx]
@@ -29,7 +31,7 @@ class DifferentialEvolution:
         return trial_vector
 
     def select(self, target_idx, trial_vector):
-        trial_fitness = self.objective_function(trial_vector)
+        trial_fitness = self.function(trial_vector)
         if trial_fitness < self.fitness[target_idx]:
             self.population[target_idx] = trial_vector
             self.fitness[target_idx] = trial_fitness
@@ -50,13 +52,9 @@ class DifferentialEvolution:
 
         return self.best_solution, self.best_fitness
 
-# Example usage:
-def trid_function(x):
-    sum_squares = np.sum((x - 1)**2)
-    sum_product = np.sum(x[:-1] * x[1:])
-    return sum_squares - sum_product
 
-bounds = (np.array([-10] * 30), np.array([10] * 30))
-de_optimizer = DifferentialEvolution(objective_function=trid_function, bounds=bounds)
+# Example usage:
+bounds = (np.full(30, -100), np.full(30, 100))
+de_optimizer = DifferentialEvolution(function=fun.trid_function, bounds=bounds)
 best_solution, best_fitness = de_optimizer.optimize()
-print(f"Best solution found: {best_solution}, Best fitness: {best_fitness}")
+print(f"Best solution found:\n{best_solution}\nBest fitness: {best_fitness}")
