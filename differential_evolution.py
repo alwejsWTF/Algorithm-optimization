@@ -5,7 +5,7 @@ from functions import choose_fun
 #  DE/current/2/bin strategy
 class DifferentialEvolution:
     def __init__(self, function, scope, dimension, population_size=50, F=0.5,
-                 CR=0.9, generations=1000, verbose=True):
+                 CR=0.5, generations=1000, verbose=True):
         self.function = function
         self.bounds = np.tile(scope, (dimension, 1))
         self.population_size = population_size
@@ -33,8 +33,8 @@ class DifferentialEvolution:
                 idx != target_idx]
         r1, r2, r3, r4 = self.population[
             np.random.choice(idxs, 4, replace=False)]
-        mutant_vector = self.population[target_idx] + self.F * (
-                    r1 - r2) + self.F * (r3 - r4)
+        mutant_vector = (self.population[target_idx] + self.F
+                         * (r1 - r2) + self.F * (r3 - r4))
         return mutant_vector
 
     def recombine(self, target_vector, mutant_vector):
@@ -55,13 +55,11 @@ class DifferentialEvolution:
         for generation in range(self.generations):
             for i in range(self.population_size):
                 mutant_vector = self.mutate(i)
-                trial_vector = self.recombine(self.population[i],
-                                              mutant_vector)
-                trial_vector = np.clip(trial_vector, self.bounds[:, 0],
-                                       self.bounds[:, 1])
+                trial_vector = self.recombine(self.population[i], mutant_vector)
+                trial_vector = np.clip(trial_vector, self.bounds[:, 0], self.bounds[:, 1])
                 self.select(i, trial_vector)
 
-            if self.verbose and (generation + 1) % 100 == 0:
+            if self.verbose and (generation + 1) % 100 == 0 or generation == 0:
                 print(f"Generation {generation + 1}: "
                       f"Best Fitness = {self.best_fitness}")
 
@@ -69,7 +67,7 @@ class DifferentialEvolution:
 
 
 # Example usage:
-f, scope = choose_fun(5)
+f, scope = choose_fun(2)
 de_optimizer = DifferentialEvolution(function=f, scope=scope, dimension=30)
 best_solution, best_fitness = de_optimizer.optimize()
 print(f"Best solution found:\n{best_solution}\nBest fitness: {best_fitness}")

@@ -14,7 +14,7 @@ def choose_fun(flag_fun, flag_scope=True):
         case 5:
             choose = sum_power_function, (-1, 1)
         case 6:
-            choose = bohachevsky_function, (-10, 10)
+            choose = schwefel_function, (-10, 10)
         case _:
             raise ValueError("Wrong function number")
     return choose if flag_scope else choose[0]
@@ -42,5 +42,5 @@ def sum_power_function(x):
     return sum(np.abs(x[i]) ** (i + 1) for i in range(len(x)))
 
 
-def bohachevsky_function(x):
+def schwefel_function(x):
     return 418.9829 * len(x) - sum(i * np.sin(np.sqrt(np.abs(i))) for i in x)

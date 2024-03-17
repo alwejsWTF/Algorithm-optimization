@@ -1,86 +1,9 @@
 import argparse
 import numpy as np
-import random
-import math
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-
-# Definicja funkcji przystosowania
-def function(x, y, flag):
-    if flag:
-        return (x + 2 * y - 7) ** 2 + (2 * x + y - 5) ** 2
-    return math.sin(3 * math.pi * x) ** 2 + (x - 1) ** 2 * (1 + math.sin(3 * math.pi * y) ** 2) \
-                                          + (y - 1) ** 2 * (1 + math.sin(2 * math.pi * y) ** 2)
-
-
-# Implementacja algorytmu
-class Particle:
-    def __init__(self, ps_bounds):
-        self.bounds = ps_bounds
-        self.position = np.array([random.uniform(self.bounds[i][0], self.bounds[i][1])
-                                  for i in range(len(self.bounds))])
-        self.velocity = np.array([0, 0])
-        self.best_position = self.position.copy()
-        self.best_value = float('inf')
-
-    def update_velocity(self, global_best_position, iw, cc, sc):
-        cognitive_velocity = cc * random.random() * (self.best_position - self.position)
-        social_velocity = sc * random.random() * (global_best_position - self.position)
-        self.velocity = iw * self.velocity + cognitive_velocity + social_velocity
-
-    def update_position(self):
-        self.position += self.velocity
-        self.position = np.clip(self.position, self.bounds[:, 0], self.bounds[:, 1])
-
-
-class ParticleSwarmOptimizer:
-    def __init__(self, fun, main_bounds, num_particles=30, max_iter=100, iw=0.5, cc=2, sc=2, function_flag=True,
-                 use_stagnation=False, stagnation_limit=10, animated=False):
-        self.fun = fun
-        self.bounds = np.array(main_bounds)
-        self.num_particles = num_particles
-        self.max_iter = max_iter
-        self.iw = iw
-        self.cc = cc
-        self.sc = sc
-        self.function_flag = function_flag
-        self.global_best_value = float('inf')
-        self.global_best_position = None
-        self.use_stagnation = use_stagnation
-        self.stagnation_limit = stagnation_limit
-        self.animated = animated
-        self.particles = [Particle(self.bounds) for _ in range(self.num_particles)]
-
-    def optimize(self):
-        if self.animated:
-            self.max_iter = 1
-        stagnation_count = 0
-        for _ in range(self.max_iter):
-            for particle in self.particles:
-                value = self.fun(particle.position[0], particle.position[1], self.function_flag)
-                if value < particle.best_value:
-                    particle.best_value = value
-                    particle.best_position = particle.position.copy()
-
-                if value < self.global_best_value:
-                    self.global_best_value = value
-                    self.global_best_position = particle.position.copy()
-                    stagnation_count = 0
-                else:
-                    stagnation_count += 1
-
-            if self.use_stagnation and stagnation_count >= self.stagnation_limit:
-                break
-
-            for particle in self.particles:
-                particle.update_velocity(self.global_best_position, self.iw, self.cc, self.sc)
-                particle.update_position()
-
-        if self.animated:
-            return [(p.position, self.fun(p.position[0], p.position[1], self.function_flag)) for p in self.particles]
-        return self.global_best_position, self.global_best_value
-
+from pso_de import ParticleSwarmOptimizer
 
 def setup_argparse():
     parser = argparse.ArgumentParser(description="Particle Swarm Optimization Algorithm")
@@ -138,7 +61,7 @@ def main():
     if args.animated:
         fig = plt.figure()
         ani = animation.FuncAnimation(fig, animated_heatmap, frames=args.iterations)
-        ani.save('pso_heatmap_animation.gif', writer='pillow', fps=math.ceil(args.iterations / 50))
+        ani.save('pso_heatmap_animation.gif', writer='pillow', fps=np.ceil(args.iterations / 50))
         print(
             f'Najlepsze położenie: (x, y) = ({pso.global_best_position[0]:.15f}, {pso.global_best_position[1]:.15f})\n'
             f'Najlepsza wartość: {pso.global_best_value}')
