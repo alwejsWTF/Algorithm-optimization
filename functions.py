@@ -1,8 +1,8 @@
 import numpy as np
 
 
-def choose_fun(flag_fun, flag_scope=True):
-    match flag_fun:
+def choose_fun(fun, flag_scope=True):
+    match fun:
         case 1:
             choose = rastrigin_function, (-5.12, 5.12)
         case 2:

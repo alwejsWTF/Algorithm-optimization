@@ -1,7 +1,5 @@
 import numpy as np
 
-from functions import choose_fun
-
 
 # PSO with DE
 class Particle:
@@ -49,7 +47,7 @@ class Particle:
 
 class ParticleSwarmOptimizer:
     def __init__(self, fun, scope, dimension, F=0.5, CR=0.5, num_particles=50,
-                 max_iter=1000, iw=0.5, cc=2, sc=2, animated=False, verbose=True):
+                 max_iter=1000, iw=0.5, cc=2, sc=2, verbose=True):
         self.fun = fun
         self.bounds = np.array([scope] * dimension)
         self.dimension = dimension
@@ -62,14 +60,11 @@ class ParticleSwarmOptimizer:
         self.sc = sc
         self.global_best_value = float('inf')
         self.global_best_position = None
-        self.animated = animated
         self.verbose = verbose
         self.particles = [Particle(self.bounds) for _ in
                           range(self.num_particles)]
 
     def optimize(self):
-        if self.animated:
-            self.max_iter = 1
         for i in range(self.max_iter):
             for particle in self.particles:
                 value = self.fun(particle.position)
@@ -85,18 +80,7 @@ class ParticleSwarmOptimizer:
                 particle.update_velocity(self.global_best_position, self.iw, self.cc, self.sc)
                 particle.update_position(self.particles, self.F, self.CR, self.fun)
 
-            if self.verbose and (i + 1) % 100 == 0 or i == 0:
+            if self.verbose and ((i + 1) % 100 == 0 or i == 0):
                 print(f"Iteration {i + 1}: "
                       f"Best value = {self.global_best_value}")
-
-        if self.animated:
-            return [(p.position, self.fun(p.position)) for p in self.particles]
         return self.global_best_position, self.global_best_value
-
-
-f, scope = choose_fun(6)
-pso_optimizer = ParticleSwarmOptimizer(fun=f, scope=scope, dimension=30)
-best_position, best_value = pso_optimizer.optimize()
-
-print("Best position:", best_position)
-print("Best value:", best_value)

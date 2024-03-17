@@ -1,5 +1,4 @@
 import numpy as np
-from functions import choose_fun
 
 
 #  DE/current/2/bin strategy
@@ -59,15 +58,8 @@ class DifferentialEvolution:
                 trial_vector = np.clip(trial_vector, self.bounds[:, 0], self.bounds[:, 1])
                 self.select(i, trial_vector)
 
-            if self.verbose and (generation + 1) % 100 == 0 or generation == 0:
+            if self.verbose and ((generation + 1) % 100 == 0 or generation == 0):
                 print(f"Generation {generation + 1}: "
                       f"Best Fitness = {self.best_fitness}")
 
         return self.best_solution, self.best_fitness
-
-
-# Example usage:
-f, scope = choose_fun(2)
-de_optimizer = DifferentialEvolution(function=f, scope=scope, dimension=30)
-best_solution, best_fitness = de_optimizer.optimize()
-print(f"Best solution found:\n{best_solution}\nBest fitness: {best_fitness}")
