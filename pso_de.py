@@ -65,6 +65,7 @@ class ParticleSwarmOptimizer:
                           range(self.num_particles)]
 
     def optimize(self):
+        best_values_per_iteration = []
         for i in range(self.max_iter):
             for particle in self.particles:
                 value = self.fun(particle.position)
@@ -80,7 +81,8 @@ class ParticleSwarmOptimizer:
                 particle.update_velocity(self.global_best_position, self.iw, self.cc, self.sc)
                 particle.update_position(self.particles, self.F, self.CR, self.fun)
 
+            best_values_per_iteration.append(self.global_best_value)
             if self.verbose and ((i + 1) % 100 == 0 or i == 0):
                 print(f"Iteration {i + 1}: "
                       f"Best value = {self.global_best_value}")
-        return self.global_best_position, self.global_best_value
+        return self.global_best_position, self.global_best_value, best_values_per_iteration

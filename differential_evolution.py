@@ -51,6 +51,7 @@ class DifferentialEvolution:
                 self.best_solution = trial_vector
 
     def optimize(self):
+        best_values_per_iteration = []
         for generation in range(self.generations):
             for i in range(self.population_size):
                 mutant_vector = self.mutate(i)
@@ -58,8 +59,9 @@ class DifferentialEvolution:
                 trial_vector = np.clip(trial_vector, self.bounds[:, 0], self.bounds[:, 1])
                 self.select(i, trial_vector)
 
+            best_values_per_iteration.append(self.best_fitness)
             if self.verbose and ((generation + 1) % 100 == 0 or generation == 0):
                 print(f"Generation {generation + 1}: "
                       f"Best Fitness = {self.best_fitness}")
 
-        return self.best_solution, self.best_fitness
+        return self.best_solution, self.best_fitness, best_values_per_iteration

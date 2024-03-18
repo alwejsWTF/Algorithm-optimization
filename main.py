@@ -6,6 +6,58 @@ from pso_de import ParticleSwarmOptimizer
 from functions import choose_fun
 
 
+def plot_best_values(best_values, title):
+    plt.figure(figsize=(10, 5))
+    iterations = np.arange(1, len(best_values) + 1)
+    plt.plot(iterations, best_values)
+    plt.title(title)
+    plt.xlabel('Iteration')
+    plt.ylabel('Best Value')
+    plt.grid(True)
+    plt.show()
+
+
+def plot_both(best_pso, best_de):
+    plt.figure(figsize=(10, 5))
+    iterations = np.arange(1, len(best_pso) + 1)
+    plt.plot(iterations, best_pso, label='PSO')
+    plt.plot(iterations, best_de, label='DE')
+    plt.title("Best Value per Iteration: PSO vs DE")
+    plt.xlabel('Iteration')
+    plt.ylabel('Value')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def plot_results(best_pso, best_de, worst_pso, worst_de):
+    plt.figure(figsize=(10, 6))
+    iterations = np.arange(1, len(best_pso) + 1)
+    plt.plot(iterations, best_pso, label='PSO', lw=2, color='orangered')
+    plt.plot(iterations, best_de, label='DE', lw=2, color='darkviolet')
+    plt.title("Value per Iteration: Best PSO vs Best DE")
+    plt.xlabel('Iteration')
+    plt.ylabel('Value')
+    plt.yscale('log')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'plots/best_.png', bbox_inches='tight')
+    # plt.show()
+    # plt.close()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(iterations, worst_pso, label='PSO', lw=2, color='orangered')
+    plt.plot(iterations, worst_de, label='DE', lw=2, color='darkviolet')
+    plt.title("Value per Iteration: Worst PSO vs Worst DE")
+    plt.xlabel('Iteration')
+    plt.ylabel('Value')
+    plt.yscale('log')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'plots/worst_.png', bbox_inches='tight')
+    # plt.show()
+    # plt.close()
+
+
 def setup_argparse():
     parser = argparse.ArgumentParser(description="Particle Swarm Optimization vs Differential Evolution")
     # Global options
@@ -53,11 +105,11 @@ def main():
             sc=args.social_component,
             verbose=args.verbose
         )
-        bounds_pso = optimizer_pso.bounds
         # Optimize with PSO
         if args.algorithm == 'pso':
-            best_position, best_value = optimizer_pso.optimize()
+            best_position, best_value, best_iter_pso = optimizer_pso.optimize()
             print(f"PSO Best position: {best_position}, Best value: {best_value}")
+            plot_best_values(best_iter_pso, "Best Value per Iteration for PSO")
 
     if args.algorithm in ['de', 'both']:
         optimizer_de = DifferentialEvolution(
@@ -70,18 +122,51 @@ def main():
             generations=args.iterations,
             verbose=args.verbose
         )
-        bounds_de = optimizer_de.bounds
         # Optimize with DE
         if args.algorithm == 'de':
-            best_position_de, best_value_de = optimizer_de.optimize()
+            best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
             print(f"DE Best position: {best_position_de}, Best value: {best_value_de}")
+            plot_best_values(best_iter_de, "Best Value per Iteration for DE")
 
     if args.algorithm == 'both':
-        best_position, best_value = optimizer_pso.optimize()
-        print(f"PSO-DE Best PSO position: {best_position}, Best PSO value: {best_value}")
-        best_position_de, best_value_de = optimizer_de.optimize()
+        best_position_pso, best_value_pso, best_iter_pso = optimizer_pso.optimize()
+        print(f"PSO-DE Best PSO position: {best_position_pso}, Best PSO value: {best_value_pso}")
+        best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
         print(f"PSO-DE Best DE position: {best_position_de}, Best DE value: {best_value_de}")
+        #plot_both(best_iter_pso, best_iter_de)
+
+
+def generate_plots():
+    function, scope = choose_fun(2, True)
+    optimizer_pso = ParticleSwarmOptimizer(
+        fun=function, scope=scope, dimension=20, F=0.5, CR=0.5,
+        num_particles=50, max_iter=100, iw=0.5, cc=2, sc=2, verbose=False
+    )
+    optimizer_de = DifferentialEvolution(
+        function=function, scope=scope, dimension=20, population_size=50,
+        F=0.5, CR=0.5, generations=100, verbose=False
+    )
+    global_pso, global_de =  float('inf'), float('inf')
+    worst_pso, worst_de =  -1, -1
+    values_pso, values_de, values_pso_worst, values_de_worst = 0, 0, 0, 0
+    for _ in range(10):
+        _, best_pso, best_iter_pso = optimizer_pso.optimize()
+        _, best_de, best_iter_de = optimizer_de.optimize()
+        if best_pso < global_pso:
+            values_pso = best_iter_pso
+            global_pso = best_pso
+        if best_de < global_de:
+            values_de = best_iter_de
+            global_de = best_de
+        if best_pso > worst_pso:
+            values_pso_worst = best_iter_pso
+            worst_pso = best_pso
+        if best_de > worst_de:
+            values_de_worst = best_iter_de
+            worst_de = best_de
+    plot_results(values_pso, values_de, values_pso_worst, values_de_worst)
 
 
 if __name__ == "__main__":
     main()
+    #generate_plots()
