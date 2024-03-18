@@ -87,7 +87,9 @@ def main():
     args = parser.parse_args()
     function, scope = choose_fun(args.function, True)
     if not args.scope_flag:
-        scope = args.scope
+        string_numbers = ''.join(args.scope).replace('(', '').replace(')', '')
+        split_numbers = string_numbers.split(',')
+        scope = tuple(map(float, split_numbers))
 
     optimizer_pso = None
     optimizer_de = None
@@ -108,7 +110,7 @@ def main():
         # Optimize with PSO
         if args.algorithm == 'pso':
             best_position, best_value, best_iter_pso = optimizer_pso.optimize()
-            print(f"PSO Best position: {best_position}, Best value: {best_value}")
+            print(f"PSO Best position: {best_position}\nBest value: {best_value}")
             plot_best_values(best_iter_pso, "Best Value per Iteration for PSO")
 
     if args.algorithm in ['de', 'both']:
@@ -125,26 +127,26 @@ def main():
         # Optimize with DE
         if args.algorithm == 'de':
             best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
-            print(f"DE Best position: {best_position_de}, Best value: {best_value_de}")
+            print(f"DE Best position: {best_position_de}\nBest value: {best_value_de}")
             plot_best_values(best_iter_de, "Best Value per Iteration for DE")
 
     if args.algorithm == 'both':
         best_position_pso, best_value_pso, best_iter_pso = optimizer_pso.optimize()
-        print(f"PSO-DE Best PSO position: {best_position_pso}, Best PSO value: {best_value_pso}")
+        print(f"PSO-DE Best PSO position: {best_position_pso}\nBest PSO value: {best_value_pso}")
         best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
-        print(f"PSO-DE Best DE position: {best_position_de}, Best DE value: {best_value_de}")
-        #plot_both(best_iter_pso, best_iter_de)
+        print(f"PSO-DE Best DE position: {best_position_de}\nBest DE value: {best_value_de}")
+        plot_both(best_iter_pso, best_iter_de)
 
 
 def generate_plots():
-    function, scope = choose_fun(2, True)
+    function, scope = choose_fun(1, True)
     optimizer_pso = ParticleSwarmOptimizer(
-        fun=function, scope=scope, dimension=20, F=0.5, CR=0.5,
+        fun=function, scope=scope, dimension=30, F=0.3, CR=0.5,
         num_particles=50, max_iter=100, iw=0.5, cc=2, sc=2, verbose=False
     )
     optimizer_de = DifferentialEvolution(
-        function=function, scope=scope, dimension=20, population_size=50,
-        F=0.5, CR=0.5, generations=100, verbose=False
+        function=function, scope=scope, dimension=30, population_size=50,
+        F=0.3, CR=0.5, generations=100, verbose=False
     )
     global_pso, global_de =  float('inf'), float('inf')
     worst_pso, worst_de =  -1, -1
