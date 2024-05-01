@@ -118,6 +118,11 @@ def setup_argparse():
     parser.add_argument(
         '--f_max', type=float, default=2,
         help="Maximum frequency value, BA ONLY")
+    # BOA options
+    # c - sensory modality
+    # i - stimulus intensity
+    # a - power exponent
+
     # Additional options
     parser.add_argument(
         '-v', '--verbose', action='store_true',

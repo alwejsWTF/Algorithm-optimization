@@ -17,8 +17,9 @@ class BatAlgorithm:
         self.frequency = np.zeros(population_size)
         self.loudness = np.full(population_size, loudness)
         self.pulse_rate = np.full(population_size, pulse_rate)
-        self.bats = np.random.uniform(low=scope[0], high=scope[1],
-                                      size=(population_size, dimension))
+        self.bats = np.random.uniform(
+            low=scope[0], high=scope[1], size=(population_size, dimension)
+        )
         self.velocity = np.zeros((population_size, dimension))
         self.fitness = np.array([self.function(bat) for bat in self.bats])
         self.best_bat = self.bats[np.argmin(self.fitness)]
