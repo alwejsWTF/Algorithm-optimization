@@ -1,10 +1,9 @@
 import numpy as np
-from functions import choose_fun
 
 
 class BatAlgorithm:
     def __init__(self, function, scope, dimension, population_size, iterations,
-                 loudness, pulse_rate, alpha, gamma, f_min, f_max):
+                 loudness, pulse_rate, alpha, gamma, f_min, f_max, verbose):
         self.function = function
         self.population_size = population_size
         self.scope = scope
@@ -14,13 +13,8 @@ class BatAlgorithm:
         self.gamma = gamma
         self.f_min = f_min
         self.f_max = f_max
+        self.verbose = verbose
         self.frequency = np.zeros(population_size)
-        # self.loudness = np.random.uniform(
-        #     low=0, high=2, size=population_size
-        # )
-        # self.pulse_rate = np.random.uniform(
-        #     low=0, high=1, size=population_size
-        # )
         self.loudness = np.full(population_size, loudness)
         self.pulse_rate = np.full(population_size, pulse_rate)
         self.bats = np.random.uniform(low=scope[0], high=scope[1],
@@ -28,13 +22,15 @@ class BatAlgorithm:
         self.velocity = np.zeros((population_size, dimension))
         self.fitness = np.array([self.function(bat) for bat in self.bats])
         self.best_bat = self.bats[np.argmin(self.fitness)]
+        self.best_fitness = np.min(self.fitness)
 
     def optimize(self):
+        best_values_per_iteration = []
         for t in range(self.iterations):
             for i in range(self.population_size):
-                self.frequency[i] = (
-                        self.f_min + (self.f_max - self.f_min) *
-                        np.random.rand()
+                self.frequency[i] = np.clip(
+                    self.f_min + (self.f_max - self.f_min) * np.random.rand(),
+                    self.f_min, self.f_max
                 )
                 self.velocity[i] += (
                         (self.bats[i] - self.best_bat) * self.frequency[i]
@@ -64,14 +60,11 @@ class BatAlgorithm:
                     self.pulse_rate[i] *= (1 - np.exp(-self.gamma * t))
                     if fitness_candidate < self.function(self.best_bat):
                         self.best_bat = candidate
+                        self.best_fitness = fitness_candidate
 
-        return self.best_bat, self.function(self.best_bat)
+            best_values_per_iteration.append(self.best_fitness)
+            if self.verbose and ((t + 1) % 100 == 0 or t == 0):
+                print(f"Iteration {t + 1}: "
+                      f"Best value = {self.best_fitness}")
 
-
-fun, sc = choose_fun(6, True)
-ba = BatAlgorithm(function=fun, scope=sc, dimension=20, population_size=100,
-                  iterations=1000, loudness=0.7, pulse_rate=0.5,
-                  alpha=0.9, gamma=0.9, f_min=0, f_max=2)
-best_bat, best_fitness = ba.optimize()
-print("Best bat position:\n", best_bat)
-print("Best fitness:", best_fitness)
+        return self.best_bat, self.best_fitness, best_values_per_iteration

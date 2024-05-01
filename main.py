@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from differential_evolution import DifferentialEvolution
 from pso_de import ParticleSwarmOptimizer
+from bat_algorithm import BatAlgorithm
 from functions import choose_fun
 
 
@@ -16,18 +17,6 @@ def plot_best_values(best_values, title):
     plt.grid(True)
     plt.show()
 
-
-def plot_both(best_pso, best_de):
-    plt.figure(figsize=(10, 5))
-    iterations = np.arange(1, len(best_pso) + 1)
-    plt.plot(iterations, best_pso, label='PSO')
-    plt.plot(iterations, best_de, label='DE')
-    plt.title("Best Value per Iteration: PSO vs DE")
-    plt.xlabel('Iteration')
-    plt.ylabel('Value')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
 
 def plot_results(best_pso, best_de, worst_pso, worst_de):
     plt.figure(figsize=(10, 6))
@@ -59,25 +48,80 @@ def plot_results(best_pso, best_de, worst_pso, worst_de):
 
 
 def setup_argparse():
-    parser = argparse.ArgumentParser(description="Particle Swarm Optimization vs Differential Evolution")
+    parser = argparse.ArgumentParser(
+        description="Different optimization algorithms"
+    )
     # Global options
-    parser.add_argument('-f', '--function', type=int, default=1, help='Function to optimize (1-6)')
-    parser.add_argument('-sf', '--scope_flag', action='store_true', help='Whether to use default scope for chosen function')
-    parser.add_argument('-s', '--scope', type=tuple[float, float], help='Scope if scope_flag is not set')
-    parser.add_argument('-a', '--algorithm', type=str, default='both', help='Algorithm to use. Choose from: [de, pso, both]')
-    parser.add_argument('-d', '--dimensions', type=int, default=20, help='number of dimensions')
-    parser.add_argument('-i', '--iterations', type=int, default=100, help="Number of iterations")
-    parser.add_argument('-dw', '--differential_weight', type=float, default=0.5, help='Value of differential weight')
-    parser.add_argument('-cp', '--crossover_probability', type=float, default=0.5, help='Value of crossover probability')
-    # DE options
-    parser.add_argument('-ps', '--population_size', type=int, default=50, help='Population size, DE ONLY')
+    parser.add_argument(
+        '-f', '--function', type=int, default=1,
+        help='Function to optimize (1-6)'
+    )
+    parser.add_argument(
+        '-sf', '--scope_flag', action='store_true',
+        help='Whether to use default scope for chosen function'
+    )
+    parser.add_argument(
+        '-s', '--scope', type=tuple[float, float],
+        help='Scope if scope_flag is not set'
+    )
+    parser.add_argument(
+        '-a', '--algorithm', type=str, required=True,
+        help='Algorithm to use. Choose from: [de, pso, ba]')
+    parser.add_argument(
+        '-d', '--dimensions', type=int, default=20,
+        help='number of dimensions')
+    parser.add_argument(
+        '-i', '--iterations', type=int, default=100,
+        help="Number of iterations")
+    # PSO-DE options
+    parser.add_argument(
+        '-dw', '--differential_weight', type=float, default=0.5,
+        help='Value of differential weight, PSO-DE ONLY')
+    parser.add_argument(
+        '-cp', '--crossover_probability', type=float, default=0.5,
+        help='Value of crossover probability, PSO-DE ONLY')
+    # DE, BA options
+    parser.add_argument(
+        '-ps', '--population_size', type=int, default=50,
+        help='Population size, DE, BA ONLY')
     # PSO options
-    parser.add_argument('-pn', '--particle_number', type=int, default=30, help="Number of particles, PSO ONLY")
-    parser.add_argument('-iw', '--inertia_weight', type=float, default=0.5, help="Weight of inertia, PSO ONLY")
-    parser.add_argument('-cc', '--cognitive_component', type=float, default=2, help="Value of cognitive component, PSO ONLY")
-    parser.add_argument('-sc', '--social_component', type=float, default=2, help="Value of social component, PSO ONLY")
+    parser.add_argument(
+        '-pn', '--particle_number', type=int, default=30,
+        help="Number of particles, PSO ONLY")
+    parser.add_argument(
+        '-iw', '--inertia_weight', type=float, default=0.5,
+        help="Weight of inertia, PSO ONLY")
+    parser.add_argument(
+        '-cc', '--cognitive_component', type=float, default=2,
+        help="Value of cognitive component, PSO ONLY")
+    parser.add_argument(
+        '-sc', '--social_component', type=float, default=2,
+        help="Value of social component, PSO ONLY")
+    # BA options
+    parser.add_argument(
+        '-l', '--loudness', type=float, default=0.7,
+        help="Initial value of loudness, BA ONLY")
+    parser.add_argument(
+        '-pr', '--pulse_rate', type=float, default=0.5,
+        help="Initial value of pulse emission rate, BA ONLY")
+    parser.add_argument(
+        '--alpha', type=float, default=0.9,
+        help="Value of alpha parameter that affects balance "
+             "between exploration and exploitation, BA ONLY")
+    parser.add_argument(
+        '--gamma', type=float, default=0.9,
+        help="Value of gamma parameter that affects "
+             "the convergence speed, BA ONLY")
+    parser.add_argument(
+        '--f_min', type=float, default=0,
+        help="Minimum frequency value, BA ONLY")
+    parser.add_argument(
+        '--f_max', type=float, default=2,
+        help="Maximum frequency value, BA ONLY")
     # Additional options
-    parser.add_argument('-v', '--verbose', action='store_true', help='Whether to print detailed information')
+    parser.add_argument(
+        '-v', '--verbose', action='store_true',
+        help='Whether to print detailed information')
     return parser
 
 
@@ -87,13 +131,15 @@ def main():
     args = parser.parse_args()
     function, scope = choose_fun(args.function, True)
     if not args.scope_flag:
-        string_numbers = ''.join(args.scope).replace('(', '').replace(')', '')
+        string_numbers = (
+            ''.join(args.scope)
+            .replace('(', '')
+            .replace(')', '')
+        )
         split_numbers = string_numbers.split(',')
         scope = tuple(map(float, split_numbers))
 
-    optimizer_pso = None
-    optimizer_de = None
-    if args.algorithm in ['pso', 'both']:
+    if args.algorithm == 'pso':
         optimizer_pso = ParticleSwarmOptimizer(
             fun=function,
             scope=scope,
@@ -108,12 +154,13 @@ def main():
             verbose=args.verbose
         )
         # Optimize with PSO
-        if args.algorithm == 'pso':
-            best_position, best_value, best_iter_pso = optimizer_pso.optimize()
-            print(f"PSO Best position: {best_position}\nBest value: {best_value}")
-            plot_best_values(best_iter_pso, "Best Value per Iteration for PSO")
-
-    if args.algorithm in ['de', 'both']:
+        best_position_pso, best_value_pso, best_iter_pso = (
+            optimizer_pso.optimize()
+        )
+        print(f"PSO Best position: {best_position_pso}"
+              f"\nPSO Best value: {best_value_pso}")
+        plot_best_values(best_iter_pso, "Best Value per Iteration for PSO")
+    elif args.algorithm == 'de':
         optimizer_de = DifferentialEvolution(
             function=function,
             scope=scope,
@@ -125,17 +172,30 @@ def main():
             verbose=args.verbose
         )
         # Optimize with DE
-        if args.algorithm == 'de':
-            best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
-            print(f"DE Best position: {best_position_de}\nBest value: {best_value_de}")
-            plot_best_values(best_iter_de, "Best Value per Iteration for DE")
-
-    if args.algorithm == 'both':
-        best_position_pso, best_value_pso, best_iter_pso = optimizer_pso.optimize()
-        print(f"PSO-DE Best PSO position: {best_position_pso}\nBest PSO value: {best_value_pso}")
         best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
-        print(f"PSO-DE Best DE position: {best_position_de}\nBest DE value: {best_value_de}")
-        plot_both(best_iter_pso, best_iter_de)
+        print(f"DE Best position: {best_position_de}\n"
+              f"DE Best value: {best_value_de}")
+        plot_best_values(best_iter_de, "Best Value per Iteration for DE")
+    elif args.algorithm == 'ba':
+        optimizer_ba = BatAlgorithm(
+            function=function,
+            scope=scope,
+            dimension=args.dimensions,
+            population_size=args.population_size,
+            iterations=args.iterations,
+            loudness=args.loudness,
+            pulse_rate=args.pulse_rate,
+            alpha=args.alpha,
+            gamma=args.gamma,
+            f_min=args.f_min,
+            f_max=args.f_max,
+            verbose=args.verbose
+        )
+        # Optimize with BA
+        best_position_ba, best_value_ba, best_iter_ba = optimizer_ba.optimize()
+        print(f"BA Best position: {best_position_ba}\n"
+              f"BA Best value: {best_value_ba}")
+        plot_best_values(best_iter_ba, "Best Value per Iteration for BA")
 
 
 def generate_plots():
@@ -148,8 +208,8 @@ def generate_plots():
         function=function, scope=scope, dimension=30, population_size=50,
         F=0.3, CR=0.5, generations=100, verbose=False
     )
-    global_pso, global_de =  float('inf'), float('inf')
-    worst_pso, worst_de =  -1, -1
+    global_pso, global_de = float('inf'), float('inf')
+    worst_pso, worst_de = -1, -1
     values_pso, values_de, values_pso_worst, values_de_worst = 0, 0, 0, 0
     for _ in range(10):
         _, best_pso, best_iter_pso = optimizer_pso.optimize()
@@ -171,4 +231,4 @@ def generate_plots():
 
 if __name__ == "__main__":
     main()
-    #generate_plots()
+    # generate_plots()

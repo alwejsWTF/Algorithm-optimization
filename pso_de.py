@@ -25,7 +25,9 @@ class Particle:
         r1, r2 = np.random.rand(2)
         cognitive_velocity = cc * r1 * (self.best_position - self.position)
         social_velocity = sc * r2 * (global_best_position - self.position)
-        self.velocity = iw * self.velocity + cognitive_velocity + social_velocity
+        self.velocity = (
+                iw * self.velocity + cognitive_velocity + social_velocity
+        )
 
     def update_position(self, particles, F, CR, fun):
         # Mutation
@@ -78,11 +80,17 @@ class ParticleSwarmOptimizer:
                     self.global_best_position = particle.position.copy()
 
             for particle in self.particles:
-                particle.update_velocity(self.global_best_position, self.iw, self.cc, self.sc)
-                particle.update_position(self.particles, self.F, self.CR, self.fun)
+                particle.update_velocity(
+                    self.global_best_position, self.iw, self.cc, self.sc
+                )
+                particle.update_position(
+                    self.particles, self.F, self.CR, self.fun
+                )
 
             best_values_per_iteration.append(self.global_best_value)
             if self.verbose and ((i + 1) % 100 == 0 or i == 0):
                 print(f"Iteration {i + 1}: "
                       f"Best value = {self.global_best_value}")
-        return self.global_best_position, self.global_best_value, best_values_per_iteration
+
+        return (self.global_best_position, self.global_best_value,
+                best_values_per_iteration)

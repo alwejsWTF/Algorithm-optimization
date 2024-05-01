@@ -55,12 +55,17 @@ class DifferentialEvolution:
         for generation in range(self.generations):
             for i in range(self.population_size):
                 mutant_vector = self.mutate(i)
-                trial_vector = self.recombine(self.population[i], mutant_vector)
-                trial_vector = np.clip(trial_vector, self.bounds[:, 0], self.bounds[:, 1])
+                trial_vector = self.recombine(
+                    self.population[i], mutant_vector
+                )
+                trial_vector = np.clip(
+                    trial_vector, self.bounds[:, 0], self.bounds[:, 1]
+                )
                 self.select(i, trial_vector)
 
             best_values_per_iteration.append(self.best_fitness)
-            if self.verbose and ((generation + 1) % 100 == 0 or generation == 0):
+            if self.verbose and ((generation + 1) % 100 == 0
+                                 or generation == 0):
                 print(f"Generation {generation + 1}: "
                       f"Best Fitness = {self.best_fitness}")
 
