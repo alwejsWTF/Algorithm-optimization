@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from differential_evolution import DifferentialEvolution
 from pso_de import ParticleSwarmOptimizer
 from bat_algorithm import BatAlgorithm
+from boa import ButterflyOptimizer
 from functions import choose_fun
 
 
@@ -54,75 +55,99 @@ def setup_argparse():
     # Global options
     parser.add_argument(
         '-f', '--function', type=int, default=1,
-        help='Function to optimize (1-6)'
+        help="Function to optimize (1-6)"
     )
     parser.add_argument(
         '-sf', '--scope_flag', action='store_true',
-        help='Whether to use default scope for chosen function'
+        help="Whether to use default scope for chosen function"
     )
     parser.add_argument(
         '-s', '--scope', type=tuple[float, float],
-        help='Scope if scope_flag is not set'
+        help="Scope if scope_flag is not set"
     )
     parser.add_argument(
         '-a', '--algorithm', type=str, required=True,
-        help='Algorithm to use. Choose from: [de, pso, ba]')
+        help="Algorithm to use. Choose from: [de, pso, ba, boa]"
+    )
     parser.add_argument(
         '-d', '--dimensions', type=int, default=20,
-        help='number of dimensions')
+        help="Number of dimensions"
+    )
     parser.add_argument(
         '-i', '--iterations', type=int, default=100,
-        help="Number of iterations")
+        help="Number of iterations"
+    )
     # PSO-DE options
     parser.add_argument(
         '-dw', '--differential_weight', type=float, default=0.5,
-        help='Value of differential weight, PSO-DE ONLY')
+        help="Value of differential weight, PSO-DE ONLY"
+    )
     parser.add_argument(
         '-cp', '--crossover_probability', type=float, default=0.5,
-        help='Value of crossover probability, PSO-DE ONLY')
+        help="Value of crossover probability, PSO-DE ONLY"
+    )
     # DE, BA options
     parser.add_argument(
         '-ps', '--population_size', type=int, default=50,
-        help='Population size, DE, BA ONLY')
+        help="Population size, DE, BA ONLY"
+    )
     # PSO options
     parser.add_argument(
         '-pn', '--particle_number', type=int, default=30,
-        help="Number of particles, PSO ONLY")
+        help="Number of particles, PSO ONLY"
+    )
     parser.add_argument(
         '-iw', '--inertia_weight', type=float, default=0.5,
-        help="Weight of inertia, PSO ONLY")
+        help="Weight of inertia, PSO ONLY"
+    )
     parser.add_argument(
         '-cc', '--cognitive_component', type=float, default=2,
-        help="Value of cognitive component, PSO ONLY")
+        help="Value of cognitive component, PSO ONLY"
+    )
     parser.add_argument(
         '-sc', '--social_component', type=float, default=2,
-        help="Value of social component, PSO ONLY")
+        help="Value of social component, PSO ONLY"
+    )
     # BA options
     parser.add_argument(
         '-l', '--loudness', type=float, default=0.7,
-        help="Initial value of loudness, BA ONLY")
+        help="Initial value of loudness, BA ONLY"
+    )
     parser.add_argument(
         '-pr', '--pulse_rate', type=float, default=0.5,
-        help="Initial value of pulse emission rate, BA ONLY")
+        help="Initial value of pulse emission rate, BA ONLY"
+    )
     parser.add_argument(
         '--alpha', type=float, default=0.9,
         help="Value of alpha parameter that affects balance "
-             "between exploration and exploitation, BA ONLY")
+             "between exploration and exploitation, BA ONLY"
+    )
     parser.add_argument(
         '--gamma', type=float, default=0.9,
         help="Value of gamma parameter that affects "
-             "the convergence speed, BA ONLY")
+             "the convergence speed, BA ONLY"
+    )
     parser.add_argument(
         '--f_min', type=float, default=0,
-        help="Minimum frequency value, BA ONLY")
+        help="Minimum frequency value, BA ONLY"
+    )
     parser.add_argument(
         '--f_max', type=float, default=2,
-        help="Maximum frequency value, BA ONLY")
+        help="Maximum frequency value, BA ONLY"
+    )
     # BOA options
-    # c - sensory modality
-    # i - stimulus intensity
-    # a - power exponent
-
+    parser.add_argument(
+        '-sm', '--sensory_modality', type=float, default=0.4,
+        help="Value of sensory modality, BOA ONLY"
+    )
+    parser.add_argument(
+        '-pe', '--power_exponent', type=float, default=0.8,
+        help="Value of power exponent, BOA ONLY"
+    )
+    parser.add_argument(
+        '-sp', '--switch_probability', type=float, default=0.8,
+        help="Value of switch probability, BOA ONLY"
+    )
     # Additional options
     parser.add_argument(
         '-v', '--verbose', action='store_true',
@@ -162,8 +187,8 @@ def main():
         best_position_pso, best_value_pso, best_iter_pso = (
             optimizer_pso.optimize()
         )
-        print(f"PSO Best position: {best_position_pso}"
-              f"\nPSO Best value: {best_value_pso}")
+        print(f"PSO Best position:\n{best_position_pso}\n"
+              f"PSO Best value: {best_value_pso}")
         plot_best_values(best_iter_pso, "Best Value per Iteration for PSO")
     elif args.algorithm == 'de':
         optimizer_de = DifferentialEvolution(
@@ -178,7 +203,7 @@ def main():
         )
         # Optimize with DE
         best_position_de, best_value_de, best_iter_de = optimizer_de.optimize()
-        print(f"DE Best position: {best_position_de}\n"
+        print(f"DE Best position:\n{best_position_de}\n"
               f"DE Best value: {best_value_de}")
         plot_best_values(best_iter_de, "Best Value per Iteration for DE")
     elif args.algorithm == 'ba':
@@ -198,9 +223,28 @@ def main():
         )
         # Optimize with BA
         best_position_ba, best_value_ba, best_iter_ba = optimizer_ba.optimize()
-        print(f"BA Best position: {best_position_ba}\n"
+        print(f"BA Best position:\n{best_position_ba}\n"
               f"BA Best value: {best_value_ba}")
         plot_best_values(best_iter_ba, "Best Value per Iteration for BA")
+    elif args.algorithm == 'boa':
+        optimizer_boa = ButterflyOptimizer(
+            function=function,
+            scope=scope,
+            dimension=args.dimensions,
+            population_size=args.population_size,
+            iterations=args.iterations,
+            sensory_modality=args.sensory_modality,
+            power_exponent=args.power_exponent,
+            switch_probability=args.switch_probability,
+            verbose=args.verbose
+        )
+        # Optimize with BOA
+        best_position_boa, best_value_boa, best_iter_boa = (
+            optimizer_boa.optimize()
+        )
+        print(f"BOA Best position:\n{best_position_boa}\n"
+              f"BOA Best value: {best_value_boa}")
+        plot_best_values(best_iter_boa, "Best Value per Iteration for BOA")
 
 
 def generate_plots():

@@ -1,11 +1,11 @@
 import numpy as np
 import math
-from functions import choose_fun
 
 
 class ButterflyOptimizer:
     def __init__(self, function, scope, dimension, population_size, iterations,
-                 sensory_modality, power_exponent, switch_probability):
+                 sensory_modality, power_exponent, switch_probability,
+                 verbose):
         self.function = function
         self.scope = scope
         self.dimension = dimension
@@ -14,6 +14,7 @@ class ButterflyOptimizer:
         self.c = sensory_modality
         self.a = power_exponent
         self.p = switch_probability
+        self.verbose = verbose
         self.butterflies = np.random.uniform(
             low=scope[0], high=scope[1], size=(population_size, dimension)
         )
@@ -42,6 +43,7 @@ class ButterflyOptimizer:
         return index1, index2
 
     def optimize(self):
+        best_values_per_iteration = []
         for t in range(self.iterations):
             self.a = 0.1 + 0.2 * t / self.iterations
             for i in range(self.population_size):
@@ -71,14 +73,9 @@ class ButterflyOptimizer:
                         self.best_fitness = fitness_candidate
                         self.best_position = candidate
 
-        return self.best_position, self.best_fitness
+            best_values_per_iteration.append(self.best_fitness)
+            if self.verbose and ((t + 1) % 100 == 0 or t == 0):
+                print(f"Iteration {t + 1}: "
+                      f"Best value = {self.best_fitness}")
 
-
-fun, sc = choose_fun(6, True)
-boa = ButterflyOptimizer(function=fun, scope=sc, dimension=20,
-                         population_size=100, iterations=1000,
-                         sensory_modality=0.4, power_exponent=0.8,
-                         switch_probability=0.8)
-best_pos, best_fitness = boa.optimize()
-print("Best position:\n", best_pos)
-print("Best fitness:", best_fitness)
+        return self.best_position, self.best_fitness, best_values_per_iteration
