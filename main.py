@@ -1,6 +1,8 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
 from differential_evolution import DifferentialEvolution
 from pso_de import ParticleSwarmOptimizer
 from bat_algorithm import BatAlgorithm
@@ -9,7 +11,7 @@ from functions import choose_fun
 
 
 def plot_best_values(best_values, title):
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 6))
     iterations = np.arange(1, len(best_values) + 1)
     plt.plot(iterations, best_values)
     plt.title(title)
@@ -19,15 +21,15 @@ def plot_best_values(best_values, title):
     plt.show()
 
 
-def plot_results(best_pso, best_de, worst_pso, worst_de):
+def plot_results(best_pso, best_de, worst_pso, worst_de, avg_ba, avg_boa):
     plt.figure(figsize=(10, 6))
     iterations = np.arange(1, len(best_pso) + 1)
-    plt.plot(iterations, best_pso, label='PSO', lw=2, color='orangered')
-    plt.plot(iterations, best_de, label='DE', lw=2, color='darkviolet')
-    plt.title("Value per Iteration: Best PSO vs Best DE")
+    plt.plot(iterations, best_pso, label='BA', lw=2, color='orangered')
+    plt.plot(iterations, best_de, label='BOA', lw=2, color='darkviolet')
+    plt.title("Best Fitness Over Iteration: Best BA vs Best BOA")
     plt.xlabel('Iteration')
-    plt.ylabel('Value')
-    plt.yscale('log')
+    plt.ylabel('Best Value')
+    # plt.yscale('log')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'plots/best_.png', bbox_inches='tight')
@@ -35,15 +37,28 @@ def plot_results(best_pso, best_de, worst_pso, worst_de):
     # plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(iterations, worst_pso, label='PSO', lw=2, color='orangered')
-    plt.plot(iterations, worst_de, label='DE', lw=2, color='darkviolet')
-    plt.title("Value per Iteration: Worst PSO vs Worst DE")
+    plt.plot(iterations, worst_pso, label='BA', lw=2, color='orangered')
+    plt.plot(iterations, worst_de, label='BOA', lw=2, color='darkviolet')
+    plt.title("Worst Fitness Over Iterations: Worst BA vs Worst BOA")
     plt.xlabel('Iteration')
-    plt.ylabel('Value')
-    plt.yscale('log')
+    plt.ylabel('Worst Value')
+    # plt.yscale('log')
     plt.legend()
     plt.grid(True)
     plt.savefig(f'plots/worst_.png', bbox_inches='tight')
+    # plt.show()
+    # plt.close()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(avg_ba, label='BA', lw=2, color='orangered')
+    plt.plot(avg_boa, label='BOA', lw=2, color='darkviolet')
+    plt.title("Average Best Fitness Over Iterations: BA vs BOA")
+    plt.xlabel('Iteration')
+    plt.ylabel('Average Value')
+    # plt.yscale('log')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'plots/avg_.png', bbox_inches='tight')
     # plt.show()
     # plt.close()
 
@@ -157,6 +172,7 @@ def setup_argparse():
 
 def main():
     # Main Code
+    plt.style.use('seaborn-v0_8-whitegrid')
     parser = setup_argparse()
     args = parser.parse_args()
     function, scope = choose_fun(args.function, True)
@@ -248,36 +264,54 @@ def main():
 
 
 def generate_plots():
+    loop_counts = 30
     function, scope = choose_fun(1, True)
-    optimizer_pso = ParticleSwarmOptimizer(
-        fun=function, scope=scope, dimension=30, F=0.3, CR=0.5,
-        num_particles=50, max_iter=100, iw=0.5, cc=2, sc=2, verbose=False
-    )
-    optimizer_de = DifferentialEvolution(
+    optimizer_ba = BatAlgorithm(
         function=function, scope=scope, dimension=30, population_size=50,
-        F=0.3, CR=0.5, generations=100, verbose=False
+        iterations=100, loudness=0.7, pulse_rate=0.5, alpha=0.9, gamma=0.9,
+        f_min=0, f_max=2, verbose=False
     )
-    global_pso, global_de = float('inf'), float('inf')
-    worst_pso, worst_de = -1, -1
-    values_pso, values_de, values_pso_worst, values_de_worst = 0, 0, 0, 0
-    for _ in range(10):
-        _, best_pso, best_iter_pso = optimizer_pso.optimize()
-        _, best_de, best_iter_de = optimizer_de.optimize()
-        if best_pso < global_pso:
-            values_pso = best_iter_pso
-            global_pso = best_pso
-        if best_de < global_de:
-            values_de = best_iter_de
-            global_de = best_de
-        if best_pso > worst_pso:
-            values_pso_worst = best_iter_pso
-            worst_pso = best_pso
-        if best_de > worst_de:
-            values_de_worst = best_iter_de
-            worst_de = best_de
-    plot_results(values_pso, values_de, values_pso_worst, values_de_worst)
+    optimizer_boa = ButterflyOptimizer(
+        function=function, scope=scope, dimension=30, population_size=50,
+        iterations=100, sensory_modality=0.4, power_exponent=0.8,
+        switch_probability=0.8, verbose=False
+    )
+    global_ba, global_boa = float('inf'), float('inf')
+    worst_ba, worst_boa = -1, -1
+    values_ba, values_boa, values_ba_worst, values_boa_worst = 0, 0, 0, 0
+    results_ba = np.zeros((loop_counts, optimizer_ba.iterations))
+    results_boa = np.zeros((loop_counts, optimizer_boa.iterations))
+    for i in range(loop_counts):
+        _, best_ba, best_iter_ba = optimizer_ba.optimize()
+        _, best_boa, best_iter_boa = optimizer_boa.optimize()
+        if best_ba < global_ba:
+            values_ba = best_iter_ba
+            global_ba = best_ba
+        if best_boa < global_boa:
+            values_boa = best_iter_boa
+            global_boa = best_boa
+        if best_ba > worst_ba:
+            values_ba_worst = best_iter_ba
+            worst_ba = best_ba
+        if best_boa > worst_boa:
+            values_boa_worst = best_iter_boa
+            worst_boa = best_boa
+        results_ba[i] = best_iter_ba
+        results_boa[i] = best_iter_boa
+
+    avg_ba = np.mean(results_ba, axis=0)
+    avg_boa = np.mean(results_boa, axis=0)
+
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+
+    plot_results(
+        values_ba, values_boa,
+        values_ba_worst, values_boa_worst,
+        avg_ba, avg_boa
+    )
 
 
 if __name__ == "__main__":
-    main()
-    # generate_plots()
+    # main()
+    generate_plots()
