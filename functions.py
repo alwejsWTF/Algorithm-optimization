@@ -26,7 +26,7 @@ def rastrigin_function(x):
 
 
 def rosenbrock_function(x):
-    return sum(100 * (x[i + 1] - x[i] ** 2) ** 2 + (1 - x[i]) ** 2 for i in
+    return sum(100 * (x[i + 1] - x[i] ** 2) ** 2 + (x[i] - 1) ** 2 for i in
                range(len(x) - 1))
 
 

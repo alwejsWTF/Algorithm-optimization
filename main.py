@@ -101,7 +101,7 @@ def setup_argparse():
         '-cp', '--crossover_probability', type=float, default=0.5,
         help="Value of crossover probability, PSO-DE ONLY"
     )
-    # DE, BA options
+    # DE, BA, BOA options
     parser.add_argument(
         '-ps', '--population_size', type=int, default=50,
         help="Population size, DE, BA ONLY"
@@ -313,5 +313,5 @@ def generate_plots():
 
 
 if __name__ == "__main__":
-    # main()
-    generate_plots()
+    main()
+    # generate_plots()
