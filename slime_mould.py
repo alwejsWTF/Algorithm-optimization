@@ -2,7 +2,7 @@ import numpy as np
 from functions import choose_fun
 
 
-class MultiSwarmSlimeMould:
+class MultiSwarmSMA:
     def __init__(self, function, scope, dimension, swarm_size, iterations,
                  num_swarms, z, verbose):
         self.function = function
@@ -27,10 +27,11 @@ class MultiSwarmSlimeMould:
             self.best_positions[np.argmin(self.best_fitness)]
         )
         self.global_best_fitness = np.min(self.best_fitness)
+        self.epsilon = 1e-10
 
     def optimize(self):
         best_values_per_iteration = []
-        for i in range(1, self.iterations + 1):
+        for i in range(self.iterations):
             for swarm_idx, swarm in enumerate(self.swarms):
                 fitness = self.fitness[swarm_idx]
                 best_fitness = self.best_fitness[swarm_idx]
@@ -40,18 +41,20 @@ class MultiSwarmSlimeMould:
                     if j <= int(self.swarm_size / 2):
                         self.weights[swarm_idx][j] = (
                             1 + np.random.rand() *
-                            np.log10(
+                            np.log10(np.maximum(
                                 (best_fitness - fitness[j]) /
-                                (best_fitness - worst_fitness) + 1)
+                                (best_fitness - worst_fitness + self.epsilon),
+                                self.epsilon) + 1)
                         )
                     else:
                         self.weights[swarm_idx][j] = (
                              1 - np.random.rand() *
-                             np.log10(
+                             np.log10(np.maximum(
                                  (best_fitness - fitness[j]) /
-                                 (best_fitness - worst_fitness) + 1)
+                                 (best_fitness - worst_fitness + self.epsilon),
+                                 self.epsilon) + 1)
                         )
-                a = np.arctanh(-(i / self.iterations) + 1)
+                a = np.arctanh(-((i + 1) / self.iterations) + 1)
                 for j in range(self.swarm_size):
                     if np.random.rand() < self.z:
                         new_position = np.random.uniform(
@@ -61,19 +64,18 @@ class MultiSwarmSlimeMould:
                         p = np.tanh(fitness[j] - self.global_best_fitness)
                         vb = np.random.uniform(-a, a, size=self.dimension)
                         vc = np.random.uniform(-1, 1, size=self.dimension)
-                        for ind in range(self.dimension):
-                            if np.random.random() < p:
-                                index1, index2 = np.random.choice(
-                                    list(set(range(0, self.swarm_size))-{j}),
-                                    size=2, replace=False
-                                )
-                                new_position = (
-                                    self.global_best_position + vb *
-                                    (self.weights[swarm_idx][j] * swarm[index1]
-                                     - swarm[index2])
-                                )
-                            else:
-                                new_position = vc * swarm[j]
+                        if np.random.random() < p:
+                            index1, index2 = np.random.choice(
+                                list(set(range(0, self.swarm_size))-{j}),
+                                size=2, replace=False
+                            )
+                            new_position = (
+                                self.global_best_position + vb *
+                                (self.weights[swarm_idx][j] * swarm[index1]
+                                 - swarm[index2])
+                            )
+                        else:
+                            new_position = vc * swarm[j]
 
                     new_position = np.clip(
                         new_position, self.scope[0], self.scope[1]
@@ -91,6 +93,8 @@ class MultiSwarmSlimeMould:
 
                 self.best_fitness[swarm_idx] = best_fitness
                 self.best_positions[swarm_idx] = best_position
+                self.fitness[swarm_idx] = fitness
+                self.swarms[swarm_idx] = swarm
 
             for swarm in self.swarms:
                 for j in range(self.swarm_size):
@@ -106,10 +110,10 @@ class MultiSwarmSlimeMould:
                 best_values_per_iteration)
 
 
-fun, bounds = choose_fun(3)
-mssma = MultiSwarmSlimeMould(
+fun, bounds = choose_fun(1)
+mssma = MultiSwarmSMA(
     fun, bounds, 30, 10, 100, 10, 0.6, False
 )
-best_position, best_fitness, _ = mssma.optimize()
-print("Best Position:", best_position)
-print("Best Fitness:", best_fitness)
+best_pos, best_fit, _ = mssma.optimize()
+print("Best Position:", best_pos)
+print("Best Fitness:", best_fit)
