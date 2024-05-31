@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from differential_evolution import DifferentialEvolution
+from de import DifferentialEvolution
 from pso_de import ParticleSwarmOptimizer
-from bat_algorithm import BatAlgorithm
+from ba import BatAlgorithm
 from boa import ButterflyOptimizer
 from functions import choose_fun
 
