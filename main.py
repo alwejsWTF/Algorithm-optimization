@@ -7,6 +7,8 @@ from de import DifferentialEvolution
 from pso_de import ParticleSwarmOptimizer
 from ba import BatAlgorithm
 from boa import ButterflyOptimizer
+from sma import MultiSwarmSMA
+from gwo import GreyWolfOptimizer
 from functions import choose_fun
 
 
@@ -21,22 +23,22 @@ def plot_best_values(best_values, title):
     plt.show()
 
 
-def plot_results(best_ba, best_boa, worst_ba, worst_boa, avg_ba, avg_boa):
+def plot_results(best_sma, best_gwo, worst_sma, worst_gwo, avg_sma, avg_gwo):
     plt.figure(figsize=(10, 6))
-    iterations = np.arange(1, len(best_ba) + 1)
+    iterations = np.arange(1, len(best_sma) + 1)
     plt.plot(
-        iterations, best_ba, label='Best BA', lw=2, color='mediumspringgreen'
+        iterations, best_sma, label='Best SMA', lw=2, color='mediumspringgreen'
     )
     plt.plot(
-        iterations, best_boa, label='Best BOA', lw=2, color='mediumseagreen'
+        iterations, best_gwo, label='Best GWO', lw=2, color='mediumseagreen'
     )
     plt.plot(
-        iterations, worst_ba, label='Worst BA', lw=2, color='mediumvioletred'
+        iterations, worst_sma, label='Worst SMA', lw=2, color='mediumvioletred'
     )
-    plt.plot(iterations, worst_boa, label='Worst BOA', lw=2, color='crimson')
-    plt.plot(iterations, avg_ba, label='Avg BA', lw=2, color='mediumblue')
-    plt.plot(iterations, avg_boa, label='Avg BOA', lw=2, color='royalblue')
-    plt.title("Fitness Over Iteration: BA vs BOA (parameter - x)(function x)")
+    plt.plot(iterations, worst_gwo, label='Worst GWO', lw=2, color='crimson')
+    plt.plot(iterations, avg_sma, label='Avg SMA', lw=2, color='mediumblue')
+    plt.plot(iterations, avg_gwo, label='Avg GWO', lw=2, color='royalblue')
+    plt.title("Fitness Over Iteration: SMA vs GWO (parameter - x)(function x)")
     plt.xlabel('Iteration')
     plt.ylabel('Value')
     plt.legend()
@@ -65,7 +67,7 @@ def setup_argparse():
     )
     parser.add_argument(
         '-a', '--algorithm', type=str, required=True,
-        help="Algorithm to use. Choose from: [de, pso, ba, boa]"
+        help="Algorithm to use. Choose from: [de, pso, ba, boa, sma, gwo]"
     )
     parser.add_argument(
         '-d', '--dimensions', type=int, default=20,
@@ -146,6 +148,26 @@ def setup_argparse():
         '-sp', '--switch_probability', type=float, default=0.8,
         help="Value of switch probability, BOA ONLY"
     )
+    # SMA
+    parser.add_argument(
+        '-ss', '--swarm_size', type=int, default=20,
+        help='Size of swarm for SMA')
+    parser.add_argument(
+        '-ns', '--num_swarms', type=int, default=10,
+        help='Number of swarms for SMA')
+    parser.add_argument(
+        '-z', '--z', type=float, default=0.6,
+        help='probability of random updating position for SMA')
+    parser.add_argument(
+        '-mt', '--migration_threshold', type=float, default=0.4,
+        help='Migration threshold for SMA')
+    # SMA and GWO
+    parser.add_argument(
+        '-mr', '--mutation_rate', type=float, default=0.4,
+        help='Mutation rate for SMA and GWO')
+    parser.add_argument(
+        '-nil', '--no_improve_limit', type=int, default=30,
+        help='Limit for result stagnation for SMA and GWO')
     # Additional options
     parser.add_argument(
         '-v', '--verbose', action='store_true',
@@ -244,48 +266,87 @@ def main():
         print(f"BOA Best position:\n{best_position_boa}\n"
               f"BOA Best value: {best_value_boa}")
         plot_best_values(best_iter_boa, "Best Value per Iteration for BOA")
+    elif args.algorithm == 'sma':
+        optimizer_sma = MultiSwarmSMA(
+            function=function,
+            scope=scope,
+            dimension=args.dimensions,
+            swarm_size=args.swarm_size,
+            iterations=args.iterations,
+            num_swarms=args.num_swarms,
+            z=args.z,
+            migration_threshold=args.migration_threshold,
+            mutation_rate=args.mutation_rate,
+            no_improve_limit=args.no_improve_limit,
+            verbose=args.verbose
+        )
+        # Optimize with SMA
+        best_position_sma, best_value_sma, best_iter_sma = (
+            optimizer_sma.optimize()
+        )
+        print(f"BOA Best position:\n{best_position_sma}\n"
+              f"BOA Best value: {best_value_sma}")
+        plot_best_values(best_iter_sma, "Best Value per Iteration for SMA")
+    elif args.algorithm == 'gwo':
+        optimizer_gwo = GreyWolfOptimizer(
+            function=function,
+            scope=scope,
+            dimension=args.dimensions,
+            population_size=args.population_size,
+            iterations=args.iterations,
+            mutation_rate=args.mutation_rate,
+            no_improve_limit=args.no_improve_limit,
+            verbose=args.verbose
+        )
+        # Optimize with GWO
+        best_position_gwo, best_value_gwo, best_iter_gwo = (
+            optimizer_gwo.optimize()
+        )
+        print(f"BOA Best position:\n{best_position_gwo}\n"
+              f"BOA Best value: {best_value_gwo}")
+        plot_best_values(best_iter_gwo, "Best Value per Iteration for GWO")
 
 
 def generate_plots():
     loop_counts = 30
     function, scope = choose_fun(1, True)
-    values_ba = np.zeros(loop_counts)
-    values_boa = np.zeros(loop_counts)
-    results_ba = np.zeros((loop_counts, 100))
-    results_boa = np.zeros((loop_counts, 100))
+    values_sma = np.zeros(loop_counts)
+    values_gwo = np.zeros(loop_counts)
+    results_sma = np.zeros((loop_counts, 100))
+    results_gwo = np.zeros((loop_counts, 100))
     for i in range(loop_counts):
-        optimizer_ba = BatAlgorithm(
-            function=function, scope=scope, dimension=30, population_size=50,
-            iterations=100, loudness=1, pulse_rate=0.5, alpha=0.9, gamma=0.9,
-            f_min=0, f_max=2, verbose=False
+        optimizer_sma = MultiSwarmSMA(
+            function=function, scope=scope, dimension=30, swarm_size=25,
+            iterations=100, num_swarms=10, z=0.5, migration_threshold=0.4,
+            mutation_rate=0.2, no_improve_limit=20, verbose=False
         )
-        optimizer_boa = ButterflyOptimizer(
-            function=function, scope=scope, dimension=30, population_size=50,
-            iterations=100, sensory_modality=0.4, power_exponent=0.8,
-            switch_probability=0.8, verbose=False
+        optimizer_gwo = GreyWolfOptimizer(
+            function=function, scope=scope, dimension=30, population_size=100,
+            iterations=100, mutation_rate=0.2, no_improve_limit=20,
+            verbose=False
         )
-        _, best_ba, best_iter_ba = optimizer_ba.optimize()
-        _, best_boa, best_iter_boa = optimizer_boa.optimize()
-        values_ba[i] = best_ba
-        values_boa[i] = best_boa
-        results_ba[i] = best_iter_ba
-        results_boa[i] = best_iter_boa
+        _, best_sma, best_iter_sma = optimizer_sma.optimize()
+        _, best_gwo, best_iter_gwo = optimizer_gwo.optimize()
+        values_sma[i] = best_sma
+        values_gwo[i] = best_gwo
+        results_sma[i] = best_iter_sma
+        results_gwo[i] = best_iter_gwo
 
-    avg_ba = np.mean(values_ba)
-    avg_boa = np.mean(values_boa)
-    differences_ba = np.abs(np.array(values_ba) - avg_ba)
-    differences_boa = np.abs(np.array(values_boa) - avg_boa)
+    avg_sma = np.mean(values_sma)
+    avg_gwo = np.mean(values_gwo)
+    differences_sma = np.abs(np.array(values_sma) - avg_sma)
+    differences_gwo = np.abs(np.array(values_gwo) - avg_gwo)
 
     if not os.path.exists('plots'):
         os.makedirs('plots')
 
     plot_results(
-        results_ba[np.argmin(values_ba)],
-        results_boa[np.argmin(values_boa)],
-        results_ba[np.argmax(values_ba)],
-        results_boa[np.argmax(values_boa)],
-        results_ba[np.argmin(differences_ba)],
-        results_boa[np.argmin(differences_boa)],
+        results_sma[np.argmin(values_sma)],
+        results_gwo[np.argmin(values_gwo)],
+        results_sma[np.argmax(values_sma)],
+        results_gwo[np.argmax(values_gwo)],
+        results_sma[np.argmin(differences_sma)],
+        results_gwo[np.argmin(differences_gwo)],
     )
 
 

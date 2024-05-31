@@ -1,5 +1,4 @@
 import numpy as np
-from functions import choose_fun
 
 
 class MultiSwarmSMA:
@@ -192,12 +191,3 @@ class MultiSwarmSMA:
 
         return (self.global_best_position, self.global_best_fitness,
                 best_values_per_iteration)
-
-
-fun, bounds = choose_fun(1)
-mssma = MultiSwarmSMA(
-    fun, bounds, 30, 10, 100, 10, 0.6, 0.4, 0.2, 30, False
-)
-best_pos, best_fit, _ = mssma.optimize()
-print("Best Position:", best_pos)
-print("Best Fitness:", best_fit)
