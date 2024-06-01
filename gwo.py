@@ -4,12 +4,6 @@ import numpy as np
 class GreyWolfOptimizer:
     def __init__(self, function, scope, dimension, population_size, iterations,
                  mutation_rate, no_improve_limit, verbose):
-        self.delta = None
-        self.delta_fitness = None
-        self.beta_fitness = None
-        self.beta = None
-        self.alpha_fitness = None
-        self.alpha = None
         self.function = function
         self.scope = scope
         self.dimension = dimension
@@ -22,8 +16,8 @@ class GreyWolfOptimizer:
             low=scope[0], high=scope[1], size=(population_size, dimension)
         )
         self.fitness = np.array([function(ind) for ind in self.population])
-        self.update_wolves()
         self.no_improve_counter = 0
+        self.update_wolves()
 
     def update_wolves(self):
         sorted_indices = np.argsort(self.fitness)
@@ -38,8 +32,7 @@ class GreyWolfOptimizer:
 
     def crossover(self, pi, gi):
         rd = np.random.rand(self.dimension)
-        o = rd * pi + (1 - rd) * gi
-        return o
+        return rd * pi + (1 - rd) * gi
 
     def mutate(self, individual):
         for i in range(self.dimension):
@@ -88,9 +81,8 @@ class GreyWolfOptimizer:
                 X3 = self.delta - A3 * D_delta
 
                 # omega
-                new_position = (X1 + X2 + X3) / 3
                 new_position = np.clip(
-                    new_position, self.scope[0], self.scope[1]
+                    (X1 + X2 + X3) / 3, self.scope[0], self.scope[1]
                 )
                 new_fitness = self.function(new_position)
 

@@ -27,10 +27,10 @@ def plot_results(best_sma, best_gwo, worst_sma, worst_gwo, avg_sma, avg_gwo):
     plt.figure(figsize=(10, 6))
     iterations = np.arange(1, len(best_sma) + 1)
     plt.plot(
-        iterations, best_sma, label='Best SMA', lw=2, color='mediumspringgreen'
+        iterations, best_sma, label='Best SMA', lw=2, color='mediumseagreen'
     )
     plt.plot(
-        iterations, best_gwo, label='Best GWO', lw=2, color='mediumseagreen'
+        iterations, best_gwo, label='Best GWO', lw=2, color='mediumspringgreen'
     )
     plt.plot(
         iterations, worst_sma, label='Worst SMA', lw=2, color='mediumvioletred'
@@ -38,12 +38,12 @@ def plot_results(best_sma, best_gwo, worst_sma, worst_gwo, avg_sma, avg_gwo):
     plt.plot(iterations, worst_gwo, label='Worst GWO', lw=2, color='crimson')
     plt.plot(iterations, avg_sma, label='Avg SMA', lw=2, color='mediumblue')
     plt.plot(iterations, avg_gwo, label='Avg GWO', lw=2, color='royalblue')
-    plt.title("Fitness Over Iteration: SMA vs GWO (parameter - x)(function x)")
+    plt.title("Fitness Over Iteration: SMA vs GWO (iterations - 100)(function rastrigin)")
     plt.xlabel('Iteration')
     plt.ylabel('Value')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'plots/parameter_value.png', bbox_inches='tight')
+    plt.savefig(f'plots/iterations_100.png', bbox_inches='tight')
     # plt.show()
     # plt.close()
 
@@ -351,5 +351,5 @@ def generate_plots():
 
 
 if __name__ == "__main__":
-    main()
-    # generate_plots()
+    # main()
+    generate_plots()

@@ -35,10 +35,9 @@ class MultiSwarmSMA:
 
     def crossover(self, pi, gi, pk):
         rd = np.random.rand(self.dimension)
-        o = np.where(
+        return np.where(
             self.function(pi) < self.function(pk), rd * pi + (1 - rd) * gi, pk
         )
-        return o
 
     def mutate(self, individual):
         for i in range(self.dimension):
@@ -53,7 +52,6 @@ class MultiSwarmSMA:
                 len(swarm), size=2, replace=False
             )
             participants = swarm[participants_idx]
-            selected.append(min(participants, key=self.function))
             selected.append(participants[np.argmin(
                 [self.function(part) for part in participants])])
         return np.array(selected)
@@ -62,10 +60,12 @@ class MultiSwarmSMA:
         best_values_per_iteration = []
         for i in range(self.iterations):
             improved = False
+            a = np.arctanh(-((i + 1) / self.iterations) + 1)
             # Main loop
             for swarm_idx in range(self.num_swarms):
                 swarm = self.swarms[swarm_idx]
-                fitness = self.fitness[swarm_idx]
+                fitness = np.apply_along_axis(self.function, 1, swarm)
+                self.fitness[swarm_idx] = fitness
 
                 idx = np.argsort(fitness)
                 worst = fitness[idx[-1]]
@@ -73,30 +73,19 @@ class MultiSwarmSMA:
 
                 for j in range(self.swarm_size):
                     current_fitness = self.function(swarm[j])
-                    if j <= int(self.swarm_size / 2):
-                        self.weights[swarm_idx][j] = (
-                            1 + np.random.rand() *
-                            np.log10(np.maximum(
-                                (best - current_fitness) /
-                                (best - worst + self.epsilon),
-                                self.epsilon) + 1)
-                        )
-                    else:
-                        self.weights[swarm_idx][j] = (
-                             1 - np.random.rand() *
-                             np.log10(np.maximum(
-                                 (best - current_fitness) /
-                                 (best - worst + self.epsilon),
-                                 self.epsilon) + 1)
-                        )
-                a = np.arctanh(-((i + 1) / self.iterations) + 1)
-                for j in range(self.swarm_size):
+                    weight_factor = 1 if j <= int(self.swarm_size / 2) else -1
+                    self.weights[swarm_idx][j] = (
+                            1 + weight_factor * np.random.rand() *
+                            np.log10(np.maximum((best - current_fitness) /
+                                                (best - worst + self.epsilon),
+                                                self.epsilon) + 1)
+                    )
                     if np.random.rand() < self.z:
                         new_position = np.random.uniform(
                             self.scope[0], self.scope[1], size=self.dimension
                         )
                     else:
-                        p = np.tanh(fitness[j] - self.global_best_fitness)
+                        p = np.tanh(current_fitness - self.global_best_fitness)
                         vb = np.random.uniform(-a, a, size=self.dimension)
                         vc = np.random.uniform(-1, 1, size=self.dimension)
                         if np.random.random() < p:
@@ -178,8 +167,8 @@ class MultiSwarmSMA:
                     for swarm_idx in range(self.num_swarms):
                         selected_individuals = self.tournament_selection(
                             self.swarms[swarm_idx])
-                        for j in range(len(selected_individuals)):
-                            self.swarms[swarm_idx][j] = selected_individuals[j]
+                        self.swarms[swarm_idx][:len(selected_individuals)] = (
+                            selected_individuals)
                     self.no_improve_counter = 0
             else:
                 self.no_improve_counter = 0
