@@ -1,4 +1,4 @@
-# TechnikiInteligentnejAnalizyDanych
+# Techniki Inteligentnej Analizy Danych
 
 This project is an implementation of several popular optimization algorithms.
 
